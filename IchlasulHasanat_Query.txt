@@ -1,0 +1,70 @@
+-- SEQUENCE --
+
+CREATE SEQUENCE region_id_seq
+MAXVALUE 99999
+START WITH 301
+INCREMENT BY 1
+CACHE 20;
+
+-- TEST --
+INSERT INTO REGION (id, name) VALUES (NEXTVAL('region_id_seq'), 'Padang');
+SELECT * FROM REGION;
+
+-- FUNCTION --
+CREATE FUNCTION JumlahTanaman_Tahun(tahun int)
+RETURNS int
+LANGUAGE plpgsql
+AS
+$$
+DECLARE
+totalTanaman integer;
+BEGIN 
+ SELECT SUM(jumlah_tanaman)
+ INTO totalTanaman
+ FROM supply
+ WHERE EXTRACT(YEAR FROM tanggalready) = tahun;
+ RETURN totalTanaman;
+END;
+$$
+
+-- TEST --
+SELECT JumlahTanaman_Tahun(2018)
+
+-- TRIGGER --
+CREATE OR REPLACE FUNCTION REGION_TRIGGER()
+  RETURNS TRIGGER 
+  AS
+$BODY$
+BEGIN
+ New.id:=nextval('region_id_seq');
+ RETURN NEW;
+END;
+$BODY$
+ LANGUAGE 'plpgsql' VOLATILE;
+
+CREATE OR REPLACE TRIGGER REGION_TRIG
+BEFORE INSERT OR UPDATE ON REGION
+FOR EACH ROW
+EXECUTE FUNCTION REGION_TRIGGER();
+
+-- PROCEDURE --
+CREATE OR REPLACE PROCEDURE gantiNamaEvent(
+    EventID int,
+ NamaEvent varchar(300)
+)
+LANGUAGE plpgsql    
+AS $$
+BEGIN 
+    UPDATE EVENT
+	SET name = NamaEvent
+	WHERE ID = EventID;
+    COMMIT;
+END;
+$$;
+
+-- QUERY --
+CREATE INDEX region_index ON region(region_id)
+
+---TRANSACTION --
+INSERT INTO REGION (id, name) VALUES (NEXTVAL('region_id_seq'), 'Wakanda');
+INSERT INTO REGION (id, name) VALUES (NEXTVAL('region_id_seq'), 'Padang');
