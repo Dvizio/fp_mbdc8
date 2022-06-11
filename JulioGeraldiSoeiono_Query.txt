@@ -1,0 +1,62 @@
+CREATE SEQUENCE user_seq
+MINVALUE 1
+MAXVALUE 999999
+START WITH 1
+INCREMENT BY 1
+CACHE 20;	
+	
+CREATE OR REPLACE TRIGGER user_seq_trigger
+	BEFORE INSERT
+	ON user_t
+	FOR EACH ROW
+	EXECUTE PROCEDURE User_seq_func();
+	
+CREATE OR REPLACE FUNCTION USER_TRIGFUNC()
+RETURNS TRIGGER 
+AS
+$BODY$
+BEGIN
+ New.id:=nextval('user_seq');
+ RETURN NEW;
+END;
+$BODY$
+LANGUAGE 'plpgsql' VOLATILE;
+
+CREATE OR REPLACE TRIGGER USER_TRIG 
+BEFORE INSERT OR UPDATE ON "User"
+FOR EACH ROW 
+EXECUTE FUNCTION USER_TRIGFUNC()
+
+CREATE OR REPLACE PROCEDURE update_user
+(id_user int,
+    nama_user varchar(100))
+LANGUAGE plpgsql AS
+$$
+BEGIN 
+UPDATE "User" SET
+"name" = nama_user
+WHERE id_user = "id";
+END
+$$;
+
+CALL update_user(1,'INGF0');
+
+CREATE INDEX user_index ON "User" ("id");
+
+CREATE FUNCTION JumlahStatusTertentu(StatusID boolean)
+RETURNS int
+LANGUAGE plpgsql
+AS
+$$
+DECLARE
+JumlahStatusTertentu integer;
+BEGIN 
+ SELECT COUNT(*)
+ INTO jumlahStatusTertentu
+ FROM tanamanterkirim
+ WHERE statusterkirim = StatusID;
+ RETURN jumlahStatusTertentu;
+END;
+$$
+
+SELECT jumlahstatustertentu(false)
